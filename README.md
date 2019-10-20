@@ -30,6 +30,17 @@ The pipeline build both apps in parallel, deploys [api] then the [ui] app.
 ```
 
 
+### Testing
+
+```
+oc logs -f deployment/ui
+oc logs -f deployment/api
+```
+
+```
+curl ui-voting.<cluster-url>/votes
+```
+
 
 ## Explanation
 
