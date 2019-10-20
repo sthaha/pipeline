@@ -1,0 +1,21 @@
+---
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineResource
+metadata:
+  name: voting-ui-git
+spec:
+  type: git
+  params:
+    name: url
+    value: http://github.com/sthaha/voting-ui.git
+---
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineResource
+metadata:
+  name: voting-ui-image
+spec:
+  type: image
+  params:
+    name: url
+    value: image-registry.openshift-image-registry.svc:5000/voting/ui
+
