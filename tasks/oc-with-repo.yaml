@@ -7,6 +7,8 @@ spec:
     resources:
       - name: source
         type: git
+      - name: image
+        type: image
     params:
       - name: script
         description: The OpenShift CLI arguments to run
@@ -14,7 +16,7 @@ spec:
         default:
           - "exit 1"
   steps:
-    - name: oc
+    - name: run
       image: quay.io/openshift/origin-cli:latest
       workingdir: /workspace/source
       command: ["/bin/bash", "-c"]
