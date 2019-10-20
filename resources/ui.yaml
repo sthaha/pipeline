@@ -6,7 +6,7 @@ metadata:
 spec:
   type: git
   params:
-    - {name: url, value: http://github.com/sthaha/voting-ui.git}
+    - {name: url, value: http://github.com/sthaha/vote-ui.git}
 ---
 apiVersion: tekton.dev/v1alpha1
 kind: PipelineResource

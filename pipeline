@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+set -e -u -o pipefail
+
+declare -r SCRIPT_DIR=$(cd -P $(dirname $0) && pwd)
+declare -r NAMESPACE=${NAMESPACE:-voting}
+
+_log() {
+    local level=$1; shift
+    echo -e "$level: $@"
+}
+
+
+log.err() {
+    _log "ERROR" "$@" >&2
+}
+
+info() {
+    _log "\nINFO" "$@"
+}
+
+err() {
+    local code=$1; shift
+    local msg="$@"; shift
+    log.err $msg
+    exit $code
+}
+
+valid_command() {
+  local fn=$1; shift
+  [[ $(type -t "$fn") == "function" ]]
+}
+
+execute() {
+  echo "Running:  '$@'"
+  ${DRY_RUN:-false} || "$@"
+}
+
+# helpers to avoid adding -n $NAMESPACE to oc and tkn
+OC() {
+  echo oc -n ${NAMESPACE} "$@"
+  oc -n ${NAMESPACE} "$@"
+}
+
+TKN() {
+ echo tkn -n ${NAMESPACE} "$@"
+ tkn -n ${NAMESPACE} "$@"
+}
+
+demo.validate() {
+  info "validating tools"
+
+  tkn version >/dev/null 2>&1 || err 1 "no tkn binary found"
+  oc version >/dev/null 2>&1 || err 1 "no oc binary found"
+  return 0
+}
+
+declare -r CATALOG_VERSION="release-v0.7"
+declare -r TEKTON_CATALOG="https://raw.githubusercontent.com/openshift/tektoncd-catalog/$CATALOG_VERSION"
+declare -r OPENSHIFT_CATALOG="https://raw.githubusercontent.com/openshift/pipelines-catalog/$CATALOG_VERSION"
+declare -r TASKS_DIR=tmp/tasks
+
+declare -r OC_TASK="$TEKTON_CATALOG/openshift-client/openshift-client-task.yaml"
+declare -r LOCAL_OC_TASK="$TASKS_DIR/oc.task.yaml"
+
+declare -r S2I_PY3_TASK="$OPENSHIFT_CATALOG/s2i-python-3/s2i-python-3-task.yaml"
+declare -r LOCAL_S2I_PY3_TASK="$TASKS_DIR/s2i-python3.task.yaml"
+
+declare -r S2I_GO_TASK="$OPENSHIFT_CATALOG/s2i-go/s2i-go-task.yaml"
+declare -r LOCAL_S2I_GO_TASK="$TASKS_DIR/s2i-go.task.yaml"
+
+demo.get-tasks() {
+  info "Downloading tasks from catalog to $TASKS_DIR directory"
+  mkdir -p "$TASKS_DIR"
+  curl -sLf  "$S2I_PY3_TASK" -o "$LOCAL_S2I_PY3_TASK"
+  curl -sLf  "$S2I_GO_TASK" -o "$LOCAL_S2I_GO_TASK"
+  curl -sLf  "$OC_TASK" -o "$LOCAL_OC_TASK"
+}
+
+
+demo.setup() {
+  demo.validate
+
+  info "ensure namespace $NAMESPACE exists"
+  OC get ns "$NAMESPACE" 2>/dev/null  || {
+    OC new-project $NAMESPACE
+  }
+
+  demo.get-tasks
+
+  OC apply -f "$TASKS_DIR"
+  OC apply -f "tasks"
+
+  info "Applying resources"
+  #sed -e "s|voting|$NAMESPACE|g" pipeline/02-resources.yaml | OC apply -f -*/
+
+  info "Applying pipeline"
+  OC apply -f pipeline.yaml
+
+  echo -e "\nPipeline"
+  echo "==============="
+  TKN p desc voting
+}
+
+demo.logs() {
+  TKN pipeline logs voting --last -f
+}
+
+demo.run() {
+  info "Applying pipeline"
+  OC apply -f pipeline.yaml
+
+  TKN pipeline start voting \
+    -r api-repo=api-repo \
+    -r ui-repo=ui-repo \
+    -r ui-image=ui-image \
+    -r api-image=api-image \
+    -s pipeline
+
+  sleep 5
+  demo.logs
+}
+
+demo.help() {
+  cat <<-EOF
+		USAGE:
+		  demo [command]
+
+		COMMANDS:
+		  setup     setups project, tasks, pipeline and resources
+		  run       starts pipeline
+		  logs      show logs of last pipelinerun
+EOF
+
+}
+
+
+main() {
+  local fn="demo.${1:-help}"
+  valid_command "$fn" || {
+    demo.help
+    err  1 "invalid command '$1'"
+  }
+
+  cd $SCRIPT_DIR
+  $fn "$@"
+  return $?
+}
+
+main "$@"

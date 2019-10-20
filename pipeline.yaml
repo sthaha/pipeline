@@ -1,0 +1,85 @@
+---
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: voting
+spec:
+  resources:
+    - {type: git, name: ui-repo}
+    - {type: git, name: api-repo}
+    - {type: image, name: ui-image}
+    - {type: image, name: api-image}
+
+  tasks:
+    # pipeline
+    # (build-api) -> deploy-api
+    #                        \
+    # (build-ui) ------------->---> deploy-ui
+
+    ### api ###
+    - name: build-api
+      taskRef:
+        name: s2i-go
+      resources:
+        inputs:
+          - {name: source, resource: api-repo}
+        outputs:
+          - {name: image, resource: api-image}
+      params:
+        - {name: TLSVERIFY, value: "false"}
+
+    - name: deploy-api
+      taskRef:
+        name: oc-with-repo
+      resources:
+        inputs:
+          - {name: source, resource: api-repo}
+      params:
+        - name: script
+          value:
+            - |-
+              oc apply -f k8s
+              echo -----------------------------------
+
+              oc patch deployment api --patch='{"spec":{"template":{"spec":{
+                "containers":[{
+                  "name": "api",
+                  "image":"image-registry.openshift-image-registry.svc:5000/voting/api"
+                }]
+              }}}}'
+
+      runAfter:
+        - build-api
+
+    - name: build-ui
+      taskRef: {name: s2i-python-3}
+      resources:
+        inputs:
+          - {name: source, resource: ui-repo}
+        outputs:
+          - {name: image, resource: ui-image}
+      params:
+        - {name: TLSVERIFY, value: "false"}
+
+    - name: deploy-ui
+      taskRef:
+        name: oc-with-repo
+      resources:
+        inputs:
+          - {name: source, resource: ui-repo}
+      params:
+        - name: script
+          value:
+            - |-
+              oc apply -f k8s
+              echo --------------------------------------------
+              oc patch deployment ui --patch='{"spec":{"template":{"spec":{
+                "containers":[{
+                  "name": "ui",
+                  "image":"image-registry.openshift-image-registry.svc:5000/voting/ui"
+                }]
+              }}}}'
+
+      runAfter:
+        - deploy-api
+        - build-ui

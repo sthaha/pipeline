@@ -1,0 +1,23 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: oc-with-repo
+spec:
+  inputs:
+    resources:
+      - name: source
+        type: git
+    params:
+      - name: script
+        description: The OpenShift CLI arguments to run
+        type: array
+        default:
+          - "exit 1"
+  steps:
+    - name: oc
+      image: quay.io/openshift/origin-cli:latest
+      workingdir: /workspace/source
+      command: ["/bin/bash", "-c"]
+      args:
+        - "$(inputs.params.script)"
+
