@@ -111,10 +111,11 @@ demo.run() {
 
   TKN pipeline start voting \
     -r api-repo=api-repo \
-    -r ui-repo=ui-repo \
-    -r ui-image=ui-image \
     -r api-image=api-image \
+    -r ui-image=ui-image \
+    -r ui-repo=ui-repo \
     -s pipeline
+
 
   sleep 5
   demo.logs

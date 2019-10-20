@@ -7,8 +7,8 @@ spec:
   resources:
     - {type: git, name: ui-repo}
     - {type: git, name: api-repo}
-    - {type: image, name: ui-image}
     - {type: image, name: api-image}
+    - {type: image, name: ui-image}
 
   tasks:
     # pipeline
@@ -34,6 +34,7 @@ spec:
       resources:
         inputs:
           - {name: source, resource: api-repo}
+          - {name: image, resource: api-image}
       params:
         - name: script
           value:
@@ -44,7 +45,7 @@ spec:
               oc patch deployment api --patch='{"spec":{"template":{"spec":{
                 "containers":[{
                   "name": "api",
-                  "image":"image-registry.openshift-image-registry.svc:5000/voting/api"
+                  "image":"$(inputs.resources.image.url)"
                 }]
               }}}}'
 
@@ -67,6 +68,7 @@ spec:
       resources:
         inputs:
           - {name: source, resource: ui-repo}
+          - {name: image, resource: ui-image}
       params:
         - name: script
           value:
@@ -76,7 +78,7 @@ spec:
               oc patch deployment ui --patch='{"spec":{"template":{"spec":{
                 "containers":[{
                   "name": "ui",
-                  "image":"image-registry.openshift-image-registry.svc:5000/voting/ui"
+                  "image":"$(inputs.resources.image.url)"
                 }]
               }}}}'
 
