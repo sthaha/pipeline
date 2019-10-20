@@ -91,7 +91,7 @@ demo.setup() {
   OC apply -f "tasks"
 
   info "Applying resources"
-  #sed -e "s|voting|$NAMESPACE|g" pipeline/02-resources.yaml | OC apply -f -*/
+  sed -e "s|voting|$NAMESPACE|g" resources/*.yaml | OC apply -f -
 
   info "Applying pipeline"
   OC apply -f pipeline.yaml
