@@ -2,20 +2,18 @@
 apiVersion: tekton.dev/v1alpha1
 kind: PipelineResource
 metadata:
-  name: voting-api-git
+  name: api-repo
 spec:
   type: git
   params:
-    name: url
-    value: http://github.com/sthaha/voting-api.git
+    - {name: url, value: http://github.com/sthaha/voting-api.git}
 ---
 apiVersion: tekton.dev/v1alpha1
 kind: PipelineResource
 metadata:
-  name: voting-api-image
+  name: api-image
 spec:
   type: image
   params:
-    name: url
-    value: image-registry.openshift-image-registry.svc:5000/voting/api
-
+    - name: url
+      value: image-registry.openshift-image-registry.svc:5000/voting/api
