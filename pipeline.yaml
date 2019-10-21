@@ -5,9 +5,9 @@ metadata:
   name: voting
 spec:
   resources:
-    - {type: git, name: ui-repo}
     - {type: git, name: api-repo}
     - {type: image, name: api-image}
+    - {type: git, name: ui-repo}
     - {type: image, name: ui-image}
 
   tasks:
@@ -28,27 +28,16 @@ spec:
       params:
         - {name: TLSVERIFY, value: "false"}
 
+
     - name: deploy-api
       taskRef:
-        name: oc-with-repo
+        name: apply-manifests
       resources:
         inputs:
           - {name: source, resource: api-repo}
           - {name: image, resource: api-image}
       params:
-        - name: script
-          value:
-            - |-
-              oc apply -f k8s
-              echo -----------------------------------
-
-              oc patch deployment api --patch='{"spec":{"template":{"spec":{
-                "containers":[{
-                  "name": "api",
-                  "image":"$(inputs.resources.image.url)"
-                }]
-              }}}}'
-
+        - {name: deployment, value: api}
       runAfter:
         - build-api
 
@@ -64,24 +53,13 @@ spec:
 
     - name: deploy-ui
       taskRef:
-        name: oc-with-repo
+        name: apply-manifests
       resources:
         inputs:
           - {name: source, resource: ui-repo}
           - {name: image, resource: ui-image}
       params:
-        - name: script
-          value:
-            - |-
-              oc apply -f k8s
-              echo --------------------------------------------
-              oc patch deployment ui --patch='{"spec":{"template":{"spec":{
-                "containers":[{
-                  "name": "ui",
-                  "image":"$(inputs.resources.image.url)"
-                }]
-              }}}}'
-
+        - {name: deployment, value: ui}
       runAfter:
         - deploy-api
         - build-ui

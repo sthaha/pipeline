@@ -1,0 +1,42 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: apply-manifests
+spec:
+  inputs:
+    resources:
+      - {type: git, name: source}
+      - {type: image, name: image}
+    params:
+      - name: deployment
+        description: The name of the deployment patch the image
+        type: string
+
+      - name: manifest-dir
+        description: The directory in source that contains yaml manifests
+        type: string
+        default: "k8s"
+
+      - name: post-deploy
+        description: The script to run post deployment
+        type: string
+        default: "echo ----------- done -------------"
+
+  steps:
+    - name: run
+      image: quay.io/openshift/origin-cli:latest
+      workingdir: /workspace/source
+      command: ["/bin/bash", "-c"]
+      args:
+        - |-
+          echo Applying manifests in $(inputs.params.manifest-dir)
+          oc apply -f $(inputs.params.manifest-dir)
+          echo -----------------------------------
+
+          oc patch deployment $(inputs.params.deployment) --patch='{"spec":{"template":{"spec":{
+            "containers":[{
+              "name": "$(inputs.params.deployment)",
+              "image":"$(inputs.resources.image.url)"
+            }]
+          }}}}'
+          $(inputs.params.post-deploy)
