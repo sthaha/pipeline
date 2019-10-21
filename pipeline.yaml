@@ -12,9 +12,10 @@ spec:
 
   tasks:
     # pipeline
-    # (build-api) -> deploy-api
-    #                        \
-    # (build-ui) ------------->---> deploy-ui
+    # (build-api) -> (deploy-api)
+    #           \                \
+    #            --> (build-ui) -->---> deploy-ui
+    #
 
     ### api ###
     - name: build-api
@@ -50,6 +51,9 @@ spec:
           - {name: image, resource: ui-image}
       params:
         - {name: TLSVERIFY, value: "false"}
+      runAfter:
+        - build-api
+
 
     - name: deploy-ui
       taskRef:
