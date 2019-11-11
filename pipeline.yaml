@@ -38,6 +38,9 @@ spec:
           - {name: image, resource: api-image}
       params:
         - {name: deployment, value: api}
+        - name: post_deploy
+          value: |-
+            echo "git: $(inputs.resources.source.url)"
       runAfter:
         - build-api
 

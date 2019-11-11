@@ -12,12 +12,12 @@ spec:
         description: The name of the deployment patch the image
         type: string
 
-      - name: manifest-dir
+      - name: manifest_dir
         description: The directory in source that contains yaml manifests
         type: string
         default: "k8s"
 
-      - name: post-deploy
+      - name: post_deploy
         description: The script to run post deployment
         type: string
         default: "echo ----------- done -------------"
@@ -29,8 +29,8 @@ spec:
       command: ["/bin/bash", "-c"]
       args:
         - |-
-          echo Applying manifests in $(inputs.params.manifest-dir)
-          oc apply -f $(inputs.params.manifest-dir)
+          echo Applying manifests in $(inputs.params.manifest_dir)
+          oc apply -f $(inputs.params.manifest_dir)
           echo -----------------------------------
 
           oc patch deployment $(inputs.params.deployment) --patch='{"spec":{"template":{"spec":{
@@ -39,4 +39,4 @@ spec:
               "image":"$(inputs.resources.image.url)"
             }]
           }}}}'
-          $(inputs.params.post-deploy)
+          $(inputs.params.post_deploy)
