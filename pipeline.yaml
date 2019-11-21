@@ -28,21 +28,25 @@ spec:
       params:
         - {name: TLSVERIFY, value: "false"}
 
-
-    - name: deploy-api
+    - name: apply-api-manifests
       taskRef:
         name: apply-manifests
       resources:
         inputs:
           - {name: source, resource: api-repo}
+      runAfter:
+        - build-api
+
+    - name: update-api-image
+      taskRef:
+        name: update-deployment
+      resources:
+        inputs:
           - {name: image, resource: api-image}
       params:
         - {name: deployment, value: api}
-        - name: post_deploy
-          value: |-
-            echo "git: $(inputs.resources.source.url)"
       runAfter:
-        - build-api
+        - apply-api-manifests
 
     - name: build-ui
       taskRef: {name: s2i-python-3}

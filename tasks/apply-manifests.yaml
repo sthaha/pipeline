@@ -6,21 +6,12 @@ spec:
   inputs:
     resources:
       - {type: git, name: source}
-      - {type: image, name: image}
     params:
-      - name: deployment
-        description: The name of the deployment patch the image
-        type: string
-
       - name: manifest_dir
         description: The directory in source that contains yaml manifests
         type: string
         default: "k8s"
 
-      - name: post_deploy
-        description: The script to run post deployment
-        type: string
-        default: "echo ----------- done -------------"
 
   steps:
     - name: run
@@ -32,11 +23,3 @@ spec:
           echo Applying manifests in $(inputs.params.manifest_dir)
           oc apply -f $(inputs.params.manifest_dir)
           echo -----------------------------------
-
-          oc patch deployment $(inputs.params.deployment) --patch='{"spec":{"template":{"spec":{
-            "containers":[{
-              "name": "$(inputs.params.deployment)",
-              "image":"$(inputs.resources.image.url)"
-            }]
-          }}}}'
-          $(inputs.params.post_deploy)

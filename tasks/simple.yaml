@@ -1,0 +1,13 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: helloworld
+spec:
+  steps:
+    - name: run
+      image: quay.io/openshift/origin-cli:latest
+      workingdir: /workspace/source
+      command: ["/bin/bash", "-c"]
+      args:
+        - |-
+          echo Hello, world.
